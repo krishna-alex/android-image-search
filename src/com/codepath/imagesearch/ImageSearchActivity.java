@@ -12,6 +12,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
@@ -30,6 +31,11 @@ public class ImageSearchActivity extends Activity {
 	TextView etQuery;
 	ArrayList<ImageResult> imageResults = new ArrayList<ImageResult>();
 	ImageResultArrayAdapter imageAdapter;
+	String imageSize;
+	String imageColor;
+	String imageType;
+	private final int REQUEST_CODE = 20;
+	
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -51,7 +57,25 @@ public class ImageSearchActivity extends Activity {
 			});
 		
 	}
-
+	
+	public void onSettingsClick(MenuItem mi) {
+	//	Toast.makeText(this, "Clicked", Toast.LENGTH_SHORT).show();
+		Intent i = new Intent(getBaseContext(), SettingsActivity.class);
+		startActivityForResult(i, REQUEST_CODE);
+	
+	}
+	@Override
+	public void onActivityResult(int requestCode, int resultCode, Intent data) {
+		super.onActivityResult(requestCode, resultCode, data);
+		Log.d("DEBUG", "Inside onActivityResult");
+	  if (resultCode == RESULT_OK) {
+	     imageSize = data.getExtras().getString("imSize");
+	     imageColor = data.getExtras().getString("imColor");
+	     imageType = data.getExtras().getString("imType");
+	     Toast.makeText(this, "Toast" + imageSize + imageColor + imageType, Toast.LENGTH_SHORT).show();
+	  }
+	} 
+	
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.
@@ -67,11 +91,12 @@ public class ImageSearchActivity extends Activity {
 	
 	public void onImageSearch(View v) {
 		String query = etQuery.getText().toString();
-		Toast.makeText(this, "Searching for " + query, Toast.LENGTH_SHORT).show();
+		//Toast.makeText(this, "Searching for " + query, Toast.LENGTH_SHORT).show();
 		AsyncHttpClient client = new AsyncHttpClient();
 		Log.d("DEBUG", "before client");
-		client.get("https://ajax.googleapis.com/ajax/services/search/images?rsz=8&" + 
-				"start=" + 0 + "&v=1.0&q=" + Uri.encode(query),
+		client.get("https://ajax.googleapis.com/ajax/services/search/images?" + 
+		"rsz=8&start=" + 0 + "&imgcolor=" + imageColor + "&imgsz=" + imageSize +
+		"&imgtype=" + imageType +"&v=1.0&q=" + Uri.encode(query),
 				new JsonHttpResponseHandler() {
 					@Override
 					public void onSuccess(JSONObject response) {
@@ -93,14 +118,12 @@ public class ImageSearchActivity extends Activity {
 
 					@Override
 					public void onFailure(Throwable arg0, JSONArray arg1) {
-						// TODO Auto-generated method stub
 						Log.d("DEBUG", arg1.toString());
 						super.onFailure(arg0, arg1);
 					}
 
 					@Override
 					public void onFailure(Throwable arg0, JSONObject arg1) {
-						// TODO Auto-generated method stub
 						Log.d("DEBUG", arg1.toString());
 						super.onFailure(arg0, arg1);
 					}
