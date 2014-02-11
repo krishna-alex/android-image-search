@@ -35,6 +35,7 @@ public class ImageSearchActivity extends Activity {
 	String imageColor;
 	String imageType;
 	private final int REQUEST_CODE = 20;
+	EndlessScrollListener scrollListener;
 	
 
 	@Override
@@ -54,8 +55,15 @@ public class ImageSearchActivity extends Activity {
 				startActivity(i);
 			}
 												
-			});
-		
+		});
+		this.scrollListener = new EndlessScrollListener( ) {
+			@Override
+		    public void onLoadMore( int start ) {
+				Log.d("DEBUG", "Inside listener");
+	        	googleImageSearch( gvResults.getCount() ); 
+		    }
+        };        
+		gvResults.setOnScrollListener( this.scrollListener );
 	}
 	
 	public void onSettingsClick(MenuItem mi) {
@@ -89,13 +97,13 @@ public class ImageSearchActivity extends Activity {
 		etQuery = (TextView) findViewById(R.id.etQuery); 
 	}
 	
-	public void onImageSearch(View v) {
+	public void googleImageSearch(int start) {
 		String query = etQuery.getText().toString();
 		//Toast.makeText(this, "Searching for " + query, Toast.LENGTH_SHORT).show();
 		AsyncHttpClient client = new AsyncHttpClient();
 		Log.d("DEBUG", "before client");
 		client.get("https://ajax.googleapis.com/ajax/services/search/images?" + 
-		"rsz=8&start=" + 0 + "&imgcolor=" + imageColor + "&imgsz=" + imageSize +
+		"rsz=8&start=" + start + "&imgcolor=" + imageColor + "&imgsz=" + imageSize +
 		"&imgtype=" + imageType +"&v=1.0&q=" + Uri.encode(query),
 				new JsonHttpResponseHandler() {
 					@Override
@@ -104,9 +112,11 @@ public class ImageSearchActivity extends Activity {
 						Log.d("DEBUG", "inside onsuccess before try");
 						Log.d("DEBUG", response.toString());
 						try {
+							int total = response.getJSONObject("responseData"
+									).getJSONObject("cursor").getInt("estimatedResultCount");
+							scrollListener.setTotal( total );
 							imageJsonResults = response.getJSONObject(
 									"responseData").getJSONArray("results");
-							imageResults.clear();
 							imageAdapter.addAll(ImageResult.
 									fromJSONArray(imageJsonResults));
 							Log.d("DEBUG", "Image Result" + imageResults.toString());
@@ -129,6 +139,10 @@ public class ImageSearchActivity extends Activity {
 					}
 			});
 				
+	}
+	public void onImageSearch(View v) {
+		imageResults.clear();
+		googleImageSearch( 0 );		
 	}
 } 
 
